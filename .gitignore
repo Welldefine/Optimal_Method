@@ -1,0 +1,47 @@
+# === LaTeX build artefacts (ignore) ===
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.pdfsync
+*.run.xml
+*.snm
+*.synctex.gz
+*.synctex(busy)
+*.toc
+*.vrb
+*.xdv
+# latexmk intermediate dirs
+latex.out/
+
+# === Editor / OS ===
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# === Python (if any scripts) ===
+__pycache__/
+*.py[cod]
+
+# Keep class/style and figures (do NOT ignore) but ensure we do not accidentally ignore them
+!*.cls
+!*.sty
+!Notes/logo-RUC.png
+
+# If you want to ignore compiled PDFs except selected, uncomment below:
+# *.pdf
+# !Notes/Part1.pdf
+
+# Local note: add more patterns as project grows.
