@@ -1,185 +1,396 @@
 \documentclass{MathNote}
 
-\title{Notes on Unconstrained Optimization — Formulations, Existence and Convergence Proofs}
-\author{Compiled for an Undergraduate Statistics Student}
+% --- Added common math packages (in case class file does not already load them) ---
+\usepackage{amsmath, amssymb, bm}
+
+% --- Temporary citation macro (numeric placeholders) ---
+% Usage: \pcite{41,42}  (later replace with \cite{key1,key2})
+\newcommand{\pcite}[1]{(#1)}
+
+% NOTE: The MathNote class expects theorem-like environments of the form
+%   \begin{definition}{Title}{label}
+% NOT the optional-argument amsthm style. We revert them accordingly.
+\title{\textbf{Notes: Optimization Methods | Week1\&2}}
+\author{Runze Tian}
 \date{\today}
 
 \begin{document}
+
 \maketitle
+
 %\tableofcontents
 
-\section{Introduction and sources}
-We study unconstrained optimization problems
-\[
-  \min_{x\in\mathbb{R}^n} f(x),
-\]
-where \(f:\mathbb{R}^n\to\mathbb{R}\) is sufficiently smooth. These notes follow the lecture slides and textbook material; see the course slides for background and notation. :contentReference[oaicite:3]{index=3}
 
-\section{Preliminaries}
-\begin{definition}{Gradient and Hessian}{}
-For \(f\in C^2\),
-\[
-g(x)=\nabla f(x)\in\mathbb{R}^n,\qquad G(x)=\nabla^2 f(x)\in\mathbb{R}^{n\times n}.
-\]
+\section{Introduction to Optimization}
+
+\subsection{Basic Concepts and Problem Formulation}
+
+\begin{definition}{Optimization}{def:optimization}
+	Optimization is the process of selecting a best element from a set of available alternatives, with regard to some criterion. The goal is to find a set of parameters or a model that minimizes or maximizes a certain objective function.
 \end{definition}
 
-We will use the Taylor expansion (second order): for \(d\) small,
-\[
-f(x+d)=f(x)+g(x)^T d+\tfrac12 d^T G(x) d + o(\|d\|^2).
-\]
+Optimization problems are central to fields like machine learning, operations research, and economics. We can formalize these problems into two primary categories.
 
-\section{Optimality conditions (brief)}
-\begin{theorem}{First- and second-order conditions}{}
-If \(x^*\) is a local minimizer and \(f\in C^1\) then \(g(x^*)=0\).
-If moreover \(f\in C^2\) and \(g(x^*)=0\), then \(G(x^*)\succeq 0\). If \(G(x^*)\succ0\) then \(x^*\) is a strict local minimizer.
-\end{theorem}
-\begin{proof}
-Standard: see Taylor expansion and directional derivative argument (short proofs omitted here as they are elementary calculus; see slides). :contentReference[oaicite:4]{index=4}
-\end{proof}
+\begin{definition}{Unconstrained Optimization}{def:unconstrained}
+	An unconstrained optimization problem is formulated as:
+	$$
+	\min_{x \in \mathbb{R}^n} f(\bm{x})
+	$$
+	Here, $\bm{x} \in \mathbb{R}^n$ is the \textbf{decision variable}, and $f: \mathbb{R}^n \to \mathbb{R}$ is the \textbf{objective function}. A solution $\bm{x}^*$ such that $f(\bm{x}^*) \le f(\bm{x})$ for all $\bm{x} \in \mathbb{R}^n$ is called a global minimizer. The value $f(\bm{x}^*)$ is the optimal value.
+\end{definition}
 
-\section{Line-search methods: existence and convergence}
+\begin{definition}{Constrained Optimization}{def:constrained}
+	A constrained optimization problem is formulated as:
+	\begin{align*}
+	\min_{\bm{x} \in \mathbb{R}^n} \quad & f(\bm{x}) \\
+	\text{subject to} \quad & c_i(\bm{x}) = 0, \quad i \in \mathcal{E} \\
+	& c_i(\bm{x}) \ge 0, \quad i \in \mathcal{I}
+	\end{align*}
+	where $\mathcal{E}$ and $\mathcal{I}$ are index sets for the \textbf{equality constraints} and \textbf{inequality constraints}, respectively. The functions $c_i(\bm{x})$ are known as the constraint functions. Any maximization problem $\max f(\bm{x})$ can be converted to a minimization problem by considering $\min -f(\bm{x})$.
+\end{definition}
 
-\subsection{Problem set-up}
-Given \(x_k\) and a descent direction \(d_k\) (i.e. \(g_k^T d_k<0\)), consider the one-dimensional function
-\[
-\varphi(\alpha)=f(x_k+\alpha d_k),\qquad \alpha>0.
-\]
-A line-search chooses a step length \(\alpha_k\) satisfying some criterion (exact or inexact). See lecture notes for the algorithmic structure. :contentReference[oaicite:5]{index=5}
+\subsection{Classification of Optimization Problems}
 
-\subsection{Existence of inexact step lengths (Wolfe / Goldstein)}
-We state and prove the standard existence result.
+Optimization problems can be classified based on the nature of their variables and functions.
+\begin{itemize}
+	\item \textbf{Continuous vs. Discrete Optimization}: If the decision variable $\bm{x}$ can take any real value (i.e., $\bm{x} \in \mathbb{R}^n$), the problem is continuous. If $\bm{x}$ is restricted to be an integer (i.e., $\bm{x} \in \mathbb{Z}^n$), the problem is discrete, often called combinatorial optimization, which is generally harder to solve.
+	\item \textbf{Smooth vs. Non-smooth Optimization}: If the objective and constraint functions are continuously differentiable, the problem is smooth. Otherwise, it is a non-smooth problem.
+	\item \textbf{Linear vs. Non-linear Programming}: If the objective function $f$ and all constraint functions $c_i$ are linear, the problem is a \textbf{Linear Program (LP)}. If the objective is quadratic and constraints are linear, it is a \textbf{Quadratic Program (QP)}. If any function is non-linear, it is a \textbf{Non-linear Program (NLP)}.
+\end{itemize}
 
-\begin{theorem}{Existence of \(\alpha\) satisfying Wolfe / Goldstein}{}
-Let \(f\in C^1\) and assume \(\varphi(\alpha)\) is bounded below on \(\alpha>0\). If \(g_k^T d_k<0\) then there exists \(\alpha>0\) satisfying the Wolfe conditions (and hence Goldstein for suitable parameters).
-\end{theorem}
+\subsection{Convex Sets}
+The concept of convexity is fundamental to optimization theory because it allows us to make strong claims about the nature of optimal solutions.
 
-\begin{proof}[Proof (concise)]
-Because \(g_k^T d_k<0\) we have \(\varphi'(0)=g_k^T d_k<0\). By continuity of \(\varphi'\), there exists \(\epsilon>0\) such that \(\varphi'(\alpha)<0\) for \(\alpha\in[0,\epsilon)\). If \(\varphi\) attains its global minimum at some \(\alpha^*>0\) then \(\varphi'(\alpha^*)=0\) and the Wolfe conditions can be satisfied with small \(\rho\) and \(\sigma\). If not, proceed by the following constructive bracket-and-shrink argument: start with \(\alpha_0\) small and increase until \(\varphi(\alpha)\) stops decreasing (this finds an interval \([0,\bar\alpha]\) containing a minimizer under mild regularity). Then apply the intermediate value property to \(\psi(\alpha):=\varphi'(\alpha)-\sigma\varphi'(0)\). Initially \(\psi(0)=\varphi'(0)-\sigma\varphi'(0)=(1-\sigma)\varphi'(0)<0\). At a sufficiently large \(\alpha\) where \(\varphi'(\alpha)\) becomes nonnegative, \(\psi(\alpha)\ge -\sigma\varphi'(0)>0\). By continuity there is \(\alpha\) with \(\psi(\alpha)=0\), which gives the curvature Wolfe condition. The Armijo (sufficient decrease) condition can be enforced by choosing a point not too large in the bracket. This standard argument (see textbooks) yields existence. A similar argument gives Goldstein existence because Goldstein is a two-sided Armijo condition which holds on a nonempty interval. :contentReference[oaicite:6]{index=6}
-\end{proof}
+\begin{definition}{Convex Set}{def:convex_set}
+	A set $C \subseteq \mathbb{R}^n$ is said to be \textbf{convex} if for any two points $\bm{x}, \bm{y} \in C$ and any scalar $\theta \in [0, 1]$, the line segment connecting them is also in $C$. That is,
+	$$
+	\theta \bm{x} + (1 - \theta)\bm{y} \in C, \quad \forall \bm{x}, \bm{y} \in C, \theta \in [0, 1]
+	$$
+	Geometrically, a set is convex if the line segment between any two of its points lies entirely within the set.
+\end{definition}
 
-\subsection{Global convergence of line-search methods (Zoutendijk-type result)}
-We give a concise proof that under standard assumptions, a class of line-search methods with Wolfe conditions yields \(\lim_{k\to\infty}\|g_k\|=0\).
-
-\paragraph{Assumptions.}
-\begin{enumerate}
-  \item \(f\) is bounded below on the level set \(\{x: f(x)\le f(x_0)\}\).
-  \item \(f\in C^1\) and \(g\) is Lipschitz continuous on the level set: \(\|g(x)-g(y)\|\le L\|x-y\|\).
-  \item Directions \(d_k\) are descent directions and the angle between \(d_k\) and \(-g_k\) is uniformly bounded away from \(\pi/2\): there exists \(\mu>0\) with
-  \[
-    -\frac{g_k^T d_k}{\|g_k\|\|d_k\|} \ge \mu >0\quad\forall k.
-  \]
-  \item \(\alpha_k\) satisfy the Wolfe conditions (with fixed \(0<\rho<\sigma<1\)).
-\end{enumerate}
-
-\begin{theorem}{Global convergence (gradient vanishes)}{}
-Under the above assumptions either the algorithm terminates at a stationary point or \(\lim_{k\to\infty} \|g_k\| = 0\).
-\end{theorem}
-
-\begin{proof}[Sketch]
-From the Armijo (sufficient decrease) Wolfe condition,
-\[
-f(x_k)-f(x_{k+1}) \ge -\rho\alpha_k g_k^T d_k = \rho\alpha_k \|g_k\|\|d_k\|\cos\theta_k,
-\]
-where \(\cos\theta_k = -g_k^T d_k / (\|g_k\|\|d_k\|) \ge \mu\). The curvature Wolfe condition and Lipschitz continuity of \(g\) imply a lower bound on \(\alpha_k\):
-\[
-g(x_{k+1})^T d_k \ge \sigma g_k^T d_k \implies \|g(x_{k+1})-g_k\|\|d_k\| \ge (1-\sigma)|g_k^T d_k|.
-\]
-Using \(\|g(x_{k+1})-g_k\|\le L\alpha_k\|d_k\|\) gives
-\[
-\alpha_k \ge \frac{(1-\sigma)|g_k^T d_k|}{L\|d_k\|^2} = \frac{(1-\sigma)\|g_k\|\cos\theta_k}{L\|d_k\|}.
-\]
-Combine with the decrease bound:
-\[
-f(x_k)-f(x_{k+1}) \ge \rho \frac{(1-\sigma)\|g_k\|^2\cos^2\theta_k}{L}.
-\]
-By the uniform angle bound \(\cos\theta_k\ge\mu\), we obtain
-\[
-f(x_k)-f(x_{k+1}) \ge C \|g_k\|^2,\qquad C:=\rho(1-\sigma)\mu^2/L>0.
-\]
-Summing from \(k=0\) to \(N-1\) gives
-\[
-f(x_0)-f(x_N)\ge C\sum_{k=0}^{N-1}\|g_k\|^2.
-\]
-Because \(f\) is bounded below, the left-hand side is bounded, so \(\sum_k\|g_k\|^2<\infty\). Hence \(\|g_k\|\to0\). This is the usual Zoutendijk-type argument; full details are in standard textbooks. :contentReference[oaicite:7]{index=7}
-\end{proof}
-
-\section{Common algorithms and local convergence}
-
-\subsection{Steepest descent (negative gradient) — brief comment}
-Steepest descent with exact line search is globally convergent but can be slow. With inexact line search under the previous assumptions it satisfies the global convergence result above. For quadratic functions it converges linearly; details omitted.
-
-\subsection{Newton's method: quadratic convergence}
-Newton iteration:
-\[
-x_{k+1}=x_k - G(x_k)^{-1} g(x_k),
-\]
-assuming \(G(x_k)\) is invertible.
-
-\begin{theorem}{Local quadratic convergence of Newton's method}{}
-Let \(f\in C^2\) and \(x^*\) be a point with \(g(x^*)=0\) and \(G(x^*)\) nonsingular. If \(G\) is Lipschitz continuous in a neighborhood of \(x^*\), then for \(x_0\) sufficiently close to \(x^*\) the Newton iterates are well-defined and converge to \(x^*\) quadratically:
-\[
-\|x_{k+1}-x^*\|\le K\|x_k-x^*\|^2
-\]
-for some \(K>0\).
-\end{theorem}
-
-\begin{proof}[Sketch]
-Write the Newton step \(s_k=-G(x_k)^{-1}g(x_k)\). Using Taylor expansion of \(g\) at \(x^*\):
-\[
-g(x_k)=G(x^*)(x_k-x^*) + r_k,\qquad \|r_k\|\le \tfrac12 L\|x_k-x^*\|^2,
-\]
-with \(L\) the Lipschitz constant of \(G\). Then
-\[
-x_{k+1}-x^* = x_k-x^* - G(x_k)^{-1}g(x_k).
-\]
-Replace \(g(x_k)\) with the expansion and use continuity of \(G^{-1}\) near \(x^*\) to get
-\[
-\|x_{k+1}-x^*\| \le C \|x_k-x^*\|^2
-\]
-for \(x_k\) close, which yields quadratic convergence. See standard derivations. :contentReference[oaicite:8]{index=8}
-\end{proof}
-
-\subsection{Quasi-Newton (BFGS) — superlinear convergence}
-Quasi-Newton methods build an approximation \(B_k\) to the Hessian (or its inverse) updating it each step (BFGS is the common choice). Under standard assumptions (local smoothness, \(B_k\) bounded and positive definite, line search satisfying strong Wolfe conditions), BFGS achieves superlinear convergence to a local minimizer when started sufficiently close.
-
-\begin{theorem}{Local superlinear convergence of BFGS (sketch)}{}
-Assume \(f\in C^2\), \(G(x^*)\succ0\), and BFGS updates are used with line searches satisfying the strong Wolfe conditions. If initial \(x_0\) sufficiently close to \(x^*\) and \(B_0\) positive definite, then \(x_k\to x^*\) and the rate is superlinear.
-\end{theorem}
-
-\begin{proof}[Sketch]
-The proof combines (i) the Dennis–More condition which shows that the quasi-Newton update approximates the true Hessian sufficiently fast, and (ii) the fact that strong Wolfe line searches control the step lengths so that the curvature condition holds, ensuring stability of updates. From these, one shows \(\|B_k-G(x^*)\|\to0\) and the step \(s_k\) behaves like the Newton step asymptotically, which yields superlinear convergence. See textbook proofs for the full technical steps. :contentReference[oaicite:9]{index=9}
-\end{proof}
-
-\section{Trust-region methods}
-
-\subsection{Subproblem and existence of solution}
-At iterate \(x_k\) build quadratic model
-\[
-q_k(d)=f(x_k)+g_k^T d+\tfrac12 d^T G_k d,
-\]
-and solve the trust-region subproblem
-\[
-\min_{d\in\mathbb{R}^n} q_k(d) \quad\text{s.t.}\ \|d\|\le\Delta_k.
-\]
-
-\begin{proposition}{Existence of global minimizer for subproblem}{}
-For any symmetric \(G_k\) and any \(\Delta_k>0\), the trust-region subproblem has at least one global minimizer.
+% 'proposition' is defined via \newtheorem -> use optional title + \label
+\begin{proposition}[Properties of Convex Sets]\label{prop:convex_sets_properties}
+	Let $C_1$ and $C_2$ be convex sets in $\mathbb{R}^n$.
+	\begin{enumerate}
+		\item The intersection $C_1 \cap C_2$ is a convex set.
+		\item The Minkowski sum $C_1 + C_2 = \{\bm{x}_1 + \bm{x}_2 \mid \bm{x}_1 \in C_1, \bm{x}_2 \in C_2\}$ is a convex set.
+	\end{enumerate}
 \end{proposition}
+
 \begin{proof}
-The feasible set \(\{d:\|d\|\le\Delta_k\}\) is compact and \(q_k\) is continuous, hence it attains a minimum on that set by the extreme value theorem.
+	1. \textbf{Proof of Intersection}: Let $\bm{x}, \bm{y} \in C_1 \cap C_2$. This implies $\bm{x}, \bm{y} \in C_1$ and $\bm{x}, \bm{y} \in C_2$. Since $C_1$ is convex, for any $\theta \in [0, 1]$, $\theta \bm{x} + (1 - \theta)\bm{y} \in C_1$. Similarly, since $C_2$ is convex, $\theta \bm{x} + (1 - \theta)\bm{y} \in C_2$. Therefore, $\theta \bm{x} + (1 - \theta)\bm{y} \in C_1 \cap C_2$, proving the intersection is convex.
+	
+	2. \textbf{Proof of Minkowski Sum}: Let $\bm{a}, \bm{b} \in C_1+C_2$. Then by definition, $\bm{a} = \bm{x}_1+\bm{x}_2$ and $\bm{b} = \bm{y}_1+\bm{y}_2$ for some $\bm{x}_1, \bm{y}_1 \in C_1$ and $\bm{x}_2, \bm{y}_2 \in C_2$. For any $\theta \in [0,1]$, consider the point $\bm{z} = \theta \bm{a} + (1-\theta)\bm{b}$.
+	$$ \bm{z} = \theta(\bm{x}_1+\bm{x}_2) + (1-\theta)(\bm{y}_1+\bm{y}_2) = \underbrace{(\theta \bm{x}_1 + (1-\theta)\bm{y}_1)}_{\in C_1} + \underbrace{(\theta \bm{x}_2 + (1-\theta)\bm{y}_2)}_{\in C_2} $$
+	Since $C_1$ and $C_2$ are convex, the two terms are in $C_1$ and $C_2$ respectively. Thus, $\bm{z} \in C_1+C_2$, proving the sum is convex.
 \end{proof}
 
-\paragraph{Uniqueness.} Uniqueness holds if \(q_k\) is strictly convex on the ball, e.g., when \(G_k\succ0\) (positive definite) so the unconstrained minimizer \(d_N=-G_k^{-1}g_k\) is unique and either lies inside the ball (then it is the unique solution) or the constrained solution on the boundary is unique under mild conditions.
 
-\subsection{Basic convergence idea}
-After solving the subproblem we compute the ratio
-\[
-\rho_k=\frac{f(x_k)-f(x_k+d_k)}{q_k(0)-q_k(d_k)}
-\]
-and accept the step if \(\rho_k\) is sufficiently large, updating \(\Delta_k\) by rules such as those in the lecture slides. Under standard assumptions (same Lipschitz and boundedness assumptions as in line-search), trust-region methods are globally convergent in the sense that either a stationary point is found or \(\|g_k\|\to0\). The proof uses the fact that the model reduction approximates the actual reduction, and poor model quality (small \(\rho_k\)) leads to shrinking \(\Delta_k\), whereas good \(\rho_k\) increases \(\Delta_k\), guaranteeing eventual progress. :contentReference[oaicite:10]{index=10}
+\subsection{Convex Functions}
 
-\subsection{Dogleg method (brief)}
-Dogleg is a practical strategy when \(G_k\) is positive definite: combine the Cauchy (steepest-descent scaled) step \(d_{SD}\) and Newton step \(d_N\) along a piecewise linear path to find a point on the trust-region boundary with acceptable reduction. The Dogleg algorithm produces a candidate \(d_k\) satisfying model decrease; global convergence of the trust-region method using Dogleg follows from the general trust-region convergence theory because Dogleg delivers a (near-)optimal subproblem solution and the standard \(\rho_k\)-based radius updates apply. :contentReference[oaicite:11]{index=11}
+\begin{definition}{Convex Function}{def:convex_function}
+	Let $C \subseteq \mathbb{R}^n$ be a convex set. A function $f: C \to \mathbb{R}$ is \textbf{convex} if for any $\bm{x}, \bm{y} \in C$ and any $\theta \in [0, 1]$, the following inequality holds:
+	$$
+	f(\theta \bm{x} + (1 - \theta)\bm{y}) \le \theta f(\bm{x}) + (1 - \theta) f(\bm{y})
+	$$
+	If the inequality is strict ($<$) for $\bm{x} \ne \bm{y}$ and $\theta \in (0,1)$, then $f$ is \textbf{strictly convex}. Geometrically, the chord connecting any two points on the function's graph lies on or above the graph itself.
+\end{definition}
 
+\begin{theorem}{First-Order Condition for Convexity}{theo:first_order_convexity}
+	Let $f: C \to \mathbb{R}$ be a continuously differentiable function on an open convex set $C \subseteq \mathbb{R}^n$. Then $f$ is convex if and only if for all $\bm{x}, \bm{y} \in C$:
+	$$
+	f(\bm{y}) \ge f(\bm{x}) + \nabla f(\bm{x})^T (\bm{y} - \bm{x})
+	$$
+	This means the first-order Taylor approximation of a convex function at any point provides a global underestimator of the function.
+\end{theorem}
+
+\begin{proof}
+	($\Rightarrow$) Assume $f$ is convex. By definition, for $\theta \in (0, 1]$ and $\bm{x}, \bm{y} \in C$:
+	$$ f(\theta\bm{y} + (1-\theta)\bm{x}) \le \theta f(\bm{y}) + (1-\theta)f(\bm{x}) $$
+	Rearranging gives:
+	$$ f(\bm{x} + \theta(\bm{y}-\bm{x})) - f(\bm{x}) \le \theta(f(\bm{y}) - f(\bm{x})) $$
+	$$ \frac{f(\bm{x} + \theta(\bm{y}-\bm{x})) - f(\bm{x})}{\theta} \le f(\bm{y}) - f(\bm{x}) $$
+	Taking the limit as $\theta \to 0^+$, the left side becomes the definition of the directional derivative of $f$ at $\bm{x}$ in the direction $\bm{y}-\bm{x}$, which is $\nabla f(\bm{x})^T (\bm{y}-\bm{x})$. Thus, $\nabla f(\bm{x})^T (\bm{y}-\bm{x}) \le f(\bm{y}) - f(\bm{x})$.
+
+	($\Leftarrow$) Assume $f(\bm{y}) \ge f(\bm{x}) + \nabla f(\bm{x})^T (\bm{y} - \bm{x})$ for all $\bm{x}, \bm{y} \in C$.
+	Let $\bm{z} = \theta \bm{x} + (1-\theta) \bm{y}$ for $\theta \in [0,1]$. We apply the inequality twice:
+	\begin{align*}
+		f(\bm{x}) &\ge f(\bm{z}) + \nabla f(\bm{z})^T(\bm{x}-\bm{z}) \\
+		f(\bm{y}) &\ge f(\bm{z}) + \nabla f(\bm{z})^T(\bm{y}-\bm{z})
+	\end{align*}
+	Multiply the first inequality by $\theta$ and the second by $(1-\theta)$ and add them:
+	\begin{align*}
+		\theta f(\bm{x}) + (1-\theta)f(\bm{y}) &\ge \theta f(\bm{z}) + (1-\theta)f(\bm{z}) + \nabla f(\bm{z})^T(\theta(\bm{x}-\bm{z}) + (1-\theta)(\bm{y}-\bm{z})) \\
+		&\ge f(\bm{z}) + \nabla f(\bm{z})^T(\theta\bm{x} + (1-\theta)\bm{y} - \bm{z}) \\
+		&\ge f(\bm{z}) + \nabla f(\bm{z})^T(\bm{z} - \bm{z}) = f(\bm{z})
+	\end{align*}
+	This shows $f(\theta \bm{x} + (1 - \theta)\bm{y}) \le \theta f(\bm{x}) + (1 - \theta) f(\bm{y})$, so $f$ is convex.
+\end{proof}
+
+
+\begin{theorem}{Second-Order Condition for Convexity}{theo:second_order_convexity}
+	Let $f: C \to \mathbb{R}$ be a twice continuously differentiable function on an open convex set $C \subseteq \mathbb{R}^n$.
+	\begin{enumerate}
+		\item $f$ is convex if and only if its Hessian matrix $\nabla^2 f(\bm{x})$ is positive semidefinite for all $\bm{x} \in C$.
+		\item If $\nabla^2 f(\bm{x})$ is positive definite for all $\bm{x} \in C$, then $f$ is strictly convex.
+	\end{enumerate}
+	Note: The converse of the second statement is not true. For example, $f(x)=x^4$ is strictly convex, but its second derivative at $x=0$ is $f''(0)=0$, which is not positive definite.
+\end{theorem}
+\begin{proof} (Sketch of Part 1)
+	($\Rightarrow$) Assume $f$ is convex. For any $\bm{x} \in C$ and direction $\bm{d}$, Taylor's theorem gives for small $t>0$:
+	$$ f(\bm{x}+t\bm{d}) = f(\bm{x}) + t\nabla f(\bm{x})^T\bm{d} + \frac{1}{2}t^2\bm{d}^T\nabla^2 f(\bm{x})\bm{d} + o(t^2\|\bm{d}\|^2) $$
+	From the first-order condition, $f(\bm{x}+t\bm{d}) \ge f(\bm{x}) + t\nabla f(\bm{x})^T\bm{d}$. Combining these gives:
+	$$ \frac{1}{2}t^2\bm{d}^T\nabla^2 f(\bm{x})\bm{d} + o(t^2\|\bm{d}\|^2) \ge 0 $$
+	Dividing by $t^2$ and letting $t \to 0$ yields $\bm{d}^T\nabla^2 f(\bm{x})\bm{d} \ge 0$, which is the definition of positive semidefiniteness.
+
+	($\Leftarrow$) Assume $\nabla^2 f(\bm{x})$ is positive semidefinite. By Taylor's theorem with remainder:
+	$$ f(\bm{y}) = f(\bm{x}) + \nabla f(\bm{x})^T(\bm{y}-\bm{x}) + \frac{1}{2}(\bm{y}-\bm{x})^T \nabla^2 f(\bm{z})(\bm{y}-\bm{x}) $$
+	for some $\bm{z}$ on the line segment between $\bm{x}$ and $\bm{y}$. Since $\nabla^2 f(\bm{z})$ is positive semidefinite, the last term is non-negative. Therefore, $f(\bm{y}) \ge f(\bm{x}) + \nabla f(\bm{x})^T(\bm{y}-\bm{x})$, which implies $f$ is convex by Theorem \ref{theo:first_order_convexity}.
+\end{proof}
+
+
+\section{Fundamentals of Unconstrained Optimization}
+
+\subsection{Optimality Conditions}
+
+Optimality conditions are mathematical statements that characterize solutions. They are essential for verifying if a point is a solution and for designing algorithms.
+
+\begin{definition}{Local and Global Minima}{def:minima}
+	Let $f: \mathbb{R}^n \to \mathbb{R}$.
+	\begin{itemize}
+		\item A point $\bm{x}^*$ is a \textbf{local minimizer} if there exists an $\epsilon > 0$ such that $f(\bm{x}^*) \le f(\bm{x})$ for all $\bm{x}$ with $\|\bm{x} - \bm{x}^*\| < \epsilon$.
+		\item A point $\bm{x}^*$ is a \textbf{global minimizer} if $f(\bm{x}^*) \le f(\bm{x})$ for all $\bm{x} \in \mathbb{R}^n$.
+		\item If the inequalities are strict ($<$) for $\bm{x} \ne \bm{x}^*$, the minimizer is called \textbf{strict}.
+	\end{itemize}
+\end{definition}
+
+For convex functions, any local minimizer is also a global minimizer.
+
+\begin{theorem}{First-Order Necessary Condition (FONC)}{theo:fonc}
+	If $\bm{x}^*$ is a local minimizer of $f$ and $f$ is continuously differentiable in an open neighborhood of $\bm{x}^*$, then the gradient at that point must be zero:
+	$$
+	\nabla f(\bm{x}^*) = \bm{0}
+	$$
+\end{theorem}
+\begin{proof}
+	Proof by contradiction. Assume $\nabla f(\bm{x}^*) \ne \bm{0}$. Let $\bm{d} = -\nabla f(\bm{x}^*)$. Since $f$ is differentiable, the directional derivative in direction $\bm{d}$ is $\nabla f(\bm{x}^*)^T \bm{d} = -\|\nabla f(\bm{x}^*)\|^2 < 0$. This means that for a small step $\alpha > 0$ in the direction $\bm{d}$, the function value will decrease. By Taylor's theorem:
+	$$ f(\bm{x}^* + \alpha \bm{d}) = f(\bm{x}^*) + \alpha \nabla f(\bm{x}^*)^T \bm{d} + o(\alpha) = f(\bm{x}^*) - \alpha \|\nabla f(\bm{x}^*)\|^2 + o(\alpha) $$
+	For a sufficiently small $\alpha > 0$, the negative linear term dominates the higher-order term, so $f(\bm{x}^* + \alpha \bm{d}) < f(\bm{x}^*)$. This contradicts the assumption that $\bm{x}^*$ is a local minimizer. Thus, we must have $\nabla f(\bm{x}^*) = \bm{0}$.
+\end{proof}
+
+
+\begin{theorem}{Second-Order Necessary Condition (SONC)}{theo:sonc}
+	If $\bm{x}^*$ is a local minimizer of $f$ and $\nabla^2 f$ exists and is continuous in an open neighborhood of $\bm{x}^*$, then $\nabla f(\bm{x}^*) = \bm{0}$ and the Hessian matrix $\nabla^2 f(\bm{x}^*)$ is positive semidefinite.
+\end{theorem}
+
+\begin{theorem}{Second-Order Sufficient Condition (SOSC)}{theo:sosc}
+	Suppose that $\nabla^2 f$ is continuous in an open neighborhood of $\bm{x}^*$. If $\nabla f(\bm{x}^*) = \bm{0}$ and the Hessian matrix $\nabla^2 f(\bm{x}^*)$ is positive definite, then $\bm{x}^*$ is a strict local minimizer of $f$.
+\end{theorem}
+\begin{proof}
+	Since $\nabla^2 f$ is continuous and $\nabla^2 f(\bm{x}^*)$ is positive definite, there exists a radius $r>0$ such that for any $\bm{x}$ with $\|\bm{x}-\bm{x}^*\| < r$, $\nabla^2 f(\bm{x})$ is also positive definite.
+	For any such $\bm{x} \ne \bm{x}^*$, let $\bm{d} = \bm{x} - \bm{x}^*$. By Taylor's theorem, there is a $\bm{z}$ on the line segment between $\bm{x}^*$ and $\bm{x}$ such that:
+	$$ f(\bm{x}) = f(\bm{x}^*) + \nabla f(\bm{x}^*)^T \bm{d} + \frac{1}{2} \bm{d}^T \nabla^2 f(\bm{z}) \bm{d} $$
+	Since $\nabla f(\bm{x}^*) = \bm{0}$ and $\nabla^2 f(\bm{z})$ is positive definite (as $\bm{z}$ is within the radius $r$), we have:
+	$$ f(\bm{x}) = f(\bm{x}^*) + \frac{1}{2} \bm{d}^T \nabla^2 f(\bm{z}) \bm{d} > f(\bm{x}^*) $$
+	The inequality is strict because $\bm{d} \ne \bm{0}$. Thus, $\bm{x}^*$ is a strict local minimizer.
+\end{proof}
+
+
+\subsection{Structure of Iterative Methods}
+
+Most optimization algorithms are iterative. They generate a sequence of points $\{\bm{x}_k\}$ that ideally converge to a minimizer $\bm{x}^*$. The core idea is to move from the current point $\bm{x}_k$ to a new, better point $\bm{x}_{k+1}$.
+
+The general structure of such a method is: $\bm{x}_{k+1} = \bm{x}_k + \alpha_k \bm{d}_k$, where:
+\begin{itemize}
+	\item $\bm{d}_k$ is the \textbf{search direction}. It must be a descent direction.
+	\item $\alpha_k > 0$ is the \textbf{step length} (or learning rate).
+\end{itemize}
+
+\begin{definition}{Descent Direction}{def:descent}
+	A direction $\bm{d}_k$ is a \textbf{descent direction} from a point $\bm{x}_k$ if for a small step, the function value decreases. For a differentiable function, this is equivalent to the condition:
+	$$ \nabla f(\bm{x}_k)^T \bm{d}_k < 0 $$
+	Geometrically, the descent direction must form an obtuse angle with the gradient vector.
+\end{definition}
+
+There are two main strategies for choosing $\bm{d}_k$ and $\alpha_k$:
+\begin{itemize}
+	\item \textbf{Line Search Methods}: First, a descent direction $\bm{d}_k$ is chosen. Second, a step length $\alpha_k$ is found that minimizes $f$ along that direction, i.e., solving $\min_{\alpha > 0} f(\bm{x}_k + \alpha \bm{d}_k)$.
+	\item \textbf{Trust Region Methods}: A model function (usually quadratic) is built to approximate $f$ around $\bm{x}_k$ within a "trust region" of radius $\Delta_k$. The direction and step length are determined simultaneously by minimizing the model within this region.
+\end{itemize}
+
+
+\subsection{Convergence of Algorithms}
+
+\begin{definition}{Rate of Convergence}{def:convergence_rate}
+	Let $\{\bm{x}_k\}$ be a sequence that converges to $\bm{x}^*$. The convergence is said to be:
+	\begin{itemize}
+		\item \textbf{Linear} if there is a constant $a \in (0, 1)$ such that $\lim_{k \to \infty} \frac{\|\bm{x}_{k+1} - \bm{x}^*\|}{\|\bm{x}_k - \bm{x}^*\|} = a$.
+		\item \textbf{Superlinear} if the limit is $a=0$.
+		\item \textbf{Quadratic (or of order 2)} if there is a constant $a$ such that $\lim_{k \to \infty} \frac{\|\bm{x}_{k+1} - \bm{x}^*\|}{\|\bm{x}_k - \bm{x}^*\|^2} = a$.
+	\end{itemize}
+	Quadratic and superlinear rates are much faster than linear convergence.
+\end{definition}
+
+
+\section{Line Search Methods}
+
+\subsection{Step Length and Search Criteria}
+Given a descent direction $\bm{d}_k$, the one-dimensional subproblem is to find a step length $\alpha_k > 0$.
+
+\begin{definition}{Exact Line Search}{def:exact_line_search}
+	An \textbf{exact line search} finds the step length $\alpha_k$ that globally minimizes the one-dimensional function $\phi(\alpha) = f(\bm{x}_k + \alpha \bm{d}_k)$ for $\alpha > 0$. This is equivalent to finding $\alpha_k$ such that $\phi'(\alpha_k)=0$, which implies:
+	$$ \nabla f(\bm{x}_k + \alpha_k \bm{d}_k)^T \bm{d}_k = 0 $$
+	This means the gradient at the new point is orthogonal to the search direction. However, finding this exact minimum is often computationally expensive.
+\end{definition}
+
+In practice, an \textbf{inexact line search} is used, which finds a step length that provides a sufficient decrease in the objective function without excessive computation. Simply requiring $f(\bm{x}_{k+1}) < f(\bm{x}_k)$ is not enough to guarantee convergence to a minimizer, as the decrease might be negligible.
+
+\subsection{The Wolfe Conditions}
+
+The Wolfe conditions are a pair of inequalities that ensure both a sufficient decrease in the function value and that the step is not excessively short.
+
+\begin{definition}{The Wolfe Conditions}{def:wolfe}
+	For constants $0 < \rho < \sigma < 1$, a step length $\alpha_k$ satisfies the \textbf{Wolfe conditions} if the following two inequalities hold:
+	\begin{enumerate}
+		\item \textbf{Armijo Condition (Sufficient Decrease)}:
+		$$ f(\bm{x}_k + \alpha_k \bm{d}_k) \le f(\bm{x}_k) + \rho \alpha_k \nabla f(\bm{x}_k)^T \bm{d}_k $$
+		This ensures the reduction in $f$ is proportional to both the step length and the directional derivative.
+		\item \textbf{Curvature Condition}:
+		$$ \nabla f(\bm{x}_k + \alpha_k \bm{d}_k)^T \bm{d}_k \ge \sigma \nabla f(\bm{x}_k)^T \bm{d}_k $$
+		This ensures the slope at the new point is less negative than the initial slope, preventing steps that are too short.
+	\end{enumerate}
+	The \textbf{Strong Wolfe Conditions} replace the curvature condition with a stricter requirement:
+	$$ |\nabla f(\bm{x}_k + \alpha_k \bm{d}_k)^T \bm{d}_k| \le \sigma |\nabla f(\bm{x}_k)^T \bm{d}_k| $$
+    This forces the step length to be closer to a stationary point of $\phi(\alpha)$.
+\end{definition}
+
+% 'lemma' is defined via \newtheorem -> use optional title + \label
+\begin{lemma}[Existence of Step Length for Wolfe Conditions]\label{lemma:wolfe_existence}
+	Let $f: \mathbb{R}^n \to \mathbb{R}$ be a continuously differentiable function. If $\bm{d}_k$ is a descent direction at $\bm{x}_k$ and $f$ is bounded below along the ray $\{\bm{x}_k + \alpha \bm{d}_k \mid \alpha > 0\}$, then there exist step lengths $\alpha > 0$ that satisfy the Wolfe conditions (for any $0 < \rho < \sigma < 1$).
+\end{lemma}
+\begin{proof}
+	Let $\phi(\alpha) = f(\bm{x}_k + \alpha \bm{d}_k)$. Since $\bm{d}_k$ is a descent direction, $\phi'(0) = \nabla f(\bm{x}_k)^T \bm{d}_k < 0$. The Armijo condition is $\phi(\alpha) \le \phi(0) + \rho \alpha \phi'(0)$.
+	The line $l(\alpha) = \phi(0) + \rho \alpha \phi'(0)$ has a negative slope. Since $f$ is bounded below, $\phi(\alpha)$ is also bounded below. Thus, the line $l(\alpha)$ must eventually cross the graph of $\phi(\alpha)$, meaning there is a set of acceptable $\alpha$ values for the Armijo condition. Let $\alpha_{\max} = \sup\{\alpha \mid \phi(\alpha) \le \phi(0) + \rho \alpha \phi'(0)\}$. Since $\phi$ is continuous, $\alpha_{\max}$ is well-defined and positive.
+	
+	Now consider the curvature condition. By the Mean Value Theorem, for any $\alpha > 0$, there exists some $\xi \in (0, \alpha)$ such that
+	$$ \phi'(\xi) = \frac{\phi(\alpha) - \phi(0)}{\alpha} $$
+	At $\alpha_{\max}$, we must have $\phi(\alpha_{\max}) = l(\alpha_{\max}) = \phi(0) + \rho \alpha_{\max} \phi'(0)$.
+	Substituting this into the MVT expression (with $\alpha = \alpha_{\max}$), we get $\phi'(\xi) = \rho \phi'(0)$.
+	Since $\rho < \sigma$ and $\phi'(0) < 0$, we have $\rho \phi'(0) > \sigma \phi'(0)$. Therefore,
+	$$ \phi'(\xi) = \nabla f(\bm{x}_k + \xi \bm{d}_k)^T \bm{d}_k = \rho \phi'(0) > \sigma \phi'(0) $$
+	This shows that the step length $\xi \in (0, \alpha_{\max})$ satisfies the curvature condition. It also satisfies the Armijo condition since $\xi < \alpha_{\max}$ and $\phi'(\xi) < 0$, implying $\phi$ is still decreasing. Thus, a valid step length exists.
+\end{proof}
+
+\subsection{Convergence of Line Search Methods}
+
+The Wolfe conditions are crucial for proving global convergence of line search methods. The following theorem, often attributed to Zoutendijk, is a cornerstone result.
+
+\begin{theorem}{Zoutendijk's Theorem}{theo:zoutendijk}
+	Consider an iterative algorithm $\bm{x}_{k+1} = \bm{x}_k + \alpha_k \bm{d}_k$, where $\bm{d}_k$ is a descent direction and $\alpha_k$ satisfies the Wolfe conditions. Suppose $f$ is bounded below in $\mathbb{R}^n$ and is continuously differentiable in an open set containing the level set $\{\bm{x} \mid f(\bm{x}) \le f(\bm{x}_0)\}$, and that the gradient $\nabla f$ is Lipschitz continuous on this set. Then
+	$$
+	\sum_{k \ge 0} \cos^2 \theta_k \|\nabla f(\bm{x}_k)\|^2 < \infty
+	$$
+	where $\theta_k$ is the angle between the search direction $\bm{d}_k$ and the negative gradient $-\nabla f(\bm{x}_k)$.
+\end{theorem}
+\begin{proof}
+	From the second Wolfe condition:
+	$$ (\nabla f_{k+1} - \nabla f_k)^T \bm{d}_k \ge (\sigma - 1) \nabla f_k^T \bm{d}_k $$
+	By the Mean Value Theorem, $(\nabla f_{k+1} - \nabla f_k) = \int_0^1 \nabla^2 f(\bm{x}_k+t\alpha_k \bm{d}_k) \alpha_k \bm{d}_k dt$.
+	Using Lipschitz continuity of the gradient, $\|\nabla f_{k+1} - \nabla f_k\| \le L \|\bm{x}_{k+1} - \bm{x}_k\| = L \alpha_k \|\bm{d}_k\|$.
+	So, $L \alpha_k \|\bm{d}_k\|^2 \ge (\nabla f_{k+1} - \nabla f_k)^T \bm{d}_k \ge (\sigma-1) \nabla f_k^T \bm{d}_k$.
+	This gives a lower bound on the step size: $\alpha_k \ge \frac{\sigma-1}{L} \frac{\nabla f_k^T \bm{d}_k}{\|\bm{d}_k\|^2}$.
+	
+	Now, sum the first Wolfe (Armijo) condition over all iterations:
+	$$ f_{k+1} \le f_k + \rho \alpha_k \nabla f_k^T \bm{d}_k $$
+	$$ f_{N+1} - f_0 = \sum_{k=0}^N (f_{k+1} - f_k) \le \rho \sum_{k=0}^N \alpha_k \nabla f_k^T \bm{d}_k $$
+	Since $f$ is bounded below, as $N \to \infty$, the sum on the right must converge. Since $\rho>0$ and $\nabla f_k^T \bm{d}_k < 0$, the series $\sum_{k=0}^\infty -\alpha_k \nabla f_k^T \bm{d}_k$ must converge.
+	Substituting the lower bound for $\alpha_k$:
+	$$ \sum_{k=0}^{\infty} -\alpha_k \nabla f_k^T \bm{d}_k \ge \sum_{k=0}^{\infty} -\frac{1-\sigma}{L} \frac{(\nabla f_k^T \bm{d}_k)^2}{\|\bm{d}_k\|^2} $$
+	By definition, $\cos \theta_k = \frac{-\nabla f_k^T \bm{d}_k}{\|\nabla f_k\| \|\bm{d}_k\|}$. So $(\nabla f_k^T \bm{d}_k)^2 = \cos^2 \theta_k \|\nabla f_k\|^2 \|\bm{d}_k\|^2$.
+	$$ \sum_{k=0}^{\infty} \frac{1-\sigma}{L} \cos^2 \theta_k \|\nabla f_k\|^2 < \infty $$
+	Since $(1-\sigma)/L$ is a positive constant, the result follows.
+\end{proof}
+
+% 'corollary' is defined via \newtheorem -> use optional title + \label
+\begin{corollary}[Convergence Corollary]\label{cor:convergence}
+	If an algorithm produces search directions such that the angle $\theta_k$ is bounded away from $90^\circ$ (i.e., $\cos \theta_k \ge \delta > 0$ for all $k$), then Zoutendijk's theorem implies that $\lim_{k \to \infty} \|\nabla f(\bm{x}_k)\| = 0$. This guarantees convergence to a stationary point. This condition on $\cos \theta_k$ is crucial and is satisfied by many algorithms, including the steepest descent and quasi-Newton methods.
+\end{corollary}
+
+
+\section{Trust Region Methods}
+
+Trust region methods are a powerful class of algorithms for unconstrained optimization. Unlike line search methods, which select a direction and then a step length, trust region methods build a local model of the objective function and restrict the search for the next iterate to a region around the current point where the model is considered reliable.
+
+\subsection{Basic Idea and Motivation}
+
+The core idea is: at each iteration, construct a (usually quadratic) model $q_k(\bm{d})$ of $f$ near the current point $\bm{x}_k$, and only trust this model within a ball of radius $\Delta_k$ (the trust region). The next step $\bm{d}_k$ is chosen by (approximately) minimizing $q_k(\bm{d})$ subject to $\|\bm{d}\| \le \Delta_k$.
+
+\begin{definition}{Trust Region Subproblem}{def:tr_subproblem}
+    At iteration $k$, the trust region subproblem is:
+    $$
+    \min_{\bm{d} \in \mathbb{R}^n} \quad q_k(\bm{d}) = f(\bm{x}_k) + \nabla f(\bm{x}_k)^T \bm{d} + \frac{1}{2} \bm{d}^T B_k \bm{d}
+    $$
+    subject to $\|\bm{d}\| \le \Delta_k$, where $B_k$ is the Hessian $\nabla^2 f(\bm{x}_k)$ or its approximation.
+\end{definition}
+
+\subsection{Trust Region Models}
+
+The model $q_k(\bm{d})$ is typically quadratic, capturing local curvature information. The choice of $B_k$ affects the algorithm's behavior:
+\begin{itemize}
+    \item If $B_k = \nabla^2 f(\bm{x}_k)$, the model is locally accurate (Newton-type).
+    \item If $B_k$ is positive definite, the subproblem is easier to solve and ensures descent.
+    \item If $B_k$ is an approximation (e.g., quasi-Newton), the method is more robust for large-scale problems.
+\end{itemize}
+
+\subsection{Solving the Trust Region Subproblem}
+
+The trust region subproblem is a constrained quadratic minimization. There are several solution strategies:
+
+\begin{itemize}
+    \item \textbf{Cauchy Point}: Minimizes $q_k(\bm{d})$ along the steepest descent direction $-\nabla f(\bm{x}_k)$, clipped to the boundary of the trust region. Fast to compute, guarantees sufficient decrease.
+    \item \textbf{Dogleg Method}: For positive definite $B_k$, combines the steepest descent direction and the Newton direction, choosing a step along a piecewise linear path (the "dogleg") within the trust region.
+    \item \textbf{Exact Solution}: For small $n$, the subproblem can be solved exactly using eigenvalue decomposition or the Moré-Sorensen algorithm.
+    \item \textbf{Truncated Conjugate Gradient}: For large-scale problems, an iterative method is used to approximately solve the subproblem.
+\end{itemize}
+
+\begin{definition}{Cauchy Point}{def:cauchy_point}
+    The Cauchy point $\bm{d}_C$ is the minimizer of $q_k(\bm{d})$ along $-\nabla f(\bm{x}_k)$ within the trust region:
+    $$
+    \bm{d}_C = -\tau_k \nabla f(\bm{x}_k)
+    $$
+    where $\displaystyle\tau_k$ is chosen so that $\displaystyle\|\bm{d}_C\| = \min\left\{ \frac{\|\nabla f(\bm{x}_k)\|^2}{\nabla f(\bm{x}_k)^T B_k \nabla f(\bm{x}_k)}, \Delta_k \right\}$.
+\end{definition}
+
+\begin{definition}{Dogleg Method}{def:dogleg}
+    The dogleg method constructs a path from the origin to the Cauchy point, then to the full Newton step. The step $\bm{d}_{DL}$ is chosen along this path such that $\|\bm{d}_{DL}\| \le \Delta_k$.
+\end{definition}
+
+\subsection{Trust Region Radius Update}
+
+After computing $\bm{d}_k$, we evaluate how well the model predicted the actual reduction in $f$:
+
+\begin{definition}{Trust Region Ratio}{def:trust_region_ratio}
+    The ratio $\rho_k$ is defined as
+    $$
+    \rho_k = \frac{f(\bm{x}_k) - f(\bm{x}_k + \bm{d}_k)}{q_k(\bm{0}) - q_k(\bm{d}_k)}
+    $$
+    It measures the agreement between the model and the true function.
+\end{definition}
+
+The update strategy is:
+\begin{itemize}
+    \item If $\rho_k \ge \eta_1$ (e.g., $\eta_1 = 0.75$), the model is good: accept the step and increase $\Delta_{k+1}$.
+    \item If $\eta_2 \le \rho_k < \eta_1$ (e.g., $\eta_2 = 0.1$), accept the step, keep $\Delta_{k+1}$ unchanged.
+    \item If $\rho_k < \eta_2$, reject the step, decrease $\Delta_{k+1}$.
+\end{itemize}
+
+\subsection{Global Convergence}
+
+Trust region methods can guarantee global convergence under mild assumptions:
+
+\begin{theorem}{Global Convergence of Trust Region Methods}{theo:tr_global_convergence}
+    If $f$ is bounded below and continuously differentiable, and the model $q_k$ satisfies regularity conditions, then any limit point of the sequence $\{\bm{x}_k\}$ generated by the trust region method is a stationary point of $f$.
+\end{theorem}
 
 \end{document}
