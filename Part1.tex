@@ -1,0 +1,185 @@
+\documentclass{MathNote}
+
+\title{Notes on Unconstrained Optimization — Formulations, Existence and Convergence Proofs}
+\author{Compiled for an Undergraduate Statistics Student}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Introduction and sources}
+We study unconstrained optimization problems
+\[
+  \min_{x\in\mathbb{R}^n} f(x),
+\]
+where \(f:\mathbb{R}^n\to\mathbb{R}\) is sufficiently smooth. These notes follow the lecture slides and textbook material; see the course slides for background and notation. :contentReference[oaicite:3]{index=3}
+
+\section{Preliminaries}
+\begin{definition}{Gradient and Hessian}{}
+For \(f\in C^2\),
+\[
+g(x)=\nabla f(x)\in\mathbb{R}^n,\qquad G(x)=\nabla^2 f(x)\in\mathbb{R}^{n\times n}.
+\]
+\end{definition}
+
+We will use the Taylor expansion (second order): for \(d\) small,
+\[
+f(x+d)=f(x)+g(x)^T d+\tfrac12 d^T G(x) d + o(\|d\|^2).
+\]
+
+\section{Optimality conditions (brief)}
+\begin{theorem}{First- and second-order conditions}{}
+If \(x^*\) is a local minimizer and \(f\in C^1\) then \(g(x^*)=0\).
+If moreover \(f\in C^2\) and \(g(x^*)=0\), then \(G(x^*)\succeq 0\). If \(G(x^*)\succ0\) then \(x^*\) is a strict local minimizer.
+\end{theorem}
+\begin{proof}
+Standard: see Taylor expansion and directional derivative argument (short proofs omitted here as they are elementary calculus; see slides). :contentReference[oaicite:4]{index=4}
+\end{proof}
+
+\section{Line-search methods: existence and convergence}
+
+\subsection{Problem set-up}
+Given \(x_k\) and a descent direction \(d_k\) (i.e. \(g_k^T d_k<0\)), consider the one-dimensional function
+\[
+\varphi(\alpha)=f(x_k+\alpha d_k),\qquad \alpha>0.
+\]
+A line-search chooses a step length \(\alpha_k\) satisfying some criterion (exact or inexact). See lecture notes for the algorithmic structure. :contentReference[oaicite:5]{index=5}
+
+\subsection{Existence of inexact step lengths (Wolfe / Goldstein)}
+We state and prove the standard existence result.
+
+\begin{theorem}{Existence of \(\alpha\) satisfying Wolfe / Goldstein}{}
+Let \(f\in C^1\) and assume \(\varphi(\alpha)\) is bounded below on \(\alpha>0\). If \(g_k^T d_k<0\) then there exists \(\alpha>0\) satisfying the Wolfe conditions (and hence Goldstein for suitable parameters).
+\end{theorem}
+
+\begin{proof}[Proof (concise)]
+Because \(g_k^T d_k<0\) we have \(\varphi'(0)=g_k^T d_k<0\). By continuity of \(\varphi'\), there exists \(\epsilon>0\) such that \(\varphi'(\alpha)<0\) for \(\alpha\in[0,\epsilon)\). If \(\varphi\) attains its global minimum at some \(\alpha^*>0\) then \(\varphi'(\alpha^*)=0\) and the Wolfe conditions can be satisfied with small \(\rho\) and \(\sigma\). If not, proceed by the following constructive bracket-and-shrink argument: start with \(\alpha_0\) small and increase until \(\varphi(\alpha)\) stops decreasing (this finds an interval \([0,\bar\alpha]\) containing a minimizer under mild regularity). Then apply the intermediate value property to \(\psi(\alpha):=\varphi'(\alpha)-\sigma\varphi'(0)\). Initially \(\psi(0)=\varphi'(0)-\sigma\varphi'(0)=(1-\sigma)\varphi'(0)<0\). At a sufficiently large \(\alpha\) where \(\varphi'(\alpha)\) becomes nonnegative, \(\psi(\alpha)\ge -\sigma\varphi'(0)>0\). By continuity there is \(\alpha\) with \(\psi(\alpha)=0\), which gives the curvature Wolfe condition. The Armijo (sufficient decrease) condition can be enforced by choosing a point not too large in the bracket. This standard argument (see textbooks) yields existence. A similar argument gives Goldstein existence because Goldstein is a two-sided Armijo condition which holds on a nonempty interval. :contentReference[oaicite:6]{index=6}
+\end{proof}
+
+\subsection{Global convergence of line-search methods (Zoutendijk-type result)}
+We give a concise proof that under standard assumptions, a class of line-search methods with Wolfe conditions yields \(\lim_{k\to\infty}\|g_k\|=0\).
+
+\paragraph{Assumptions.}
+\begin{enumerate}
+  \item \(f\) is bounded below on the level set \(\{x: f(x)\le f(x_0)\}\).
+  \item \(f\in C^1\) and \(g\) is Lipschitz continuous on the level set: \(\|g(x)-g(y)\|\le L\|x-y\|\).
+  \item Directions \(d_k\) are descent directions and the angle between \(d_k\) and \(-g_k\) is uniformly bounded away from \(\pi/2\): there exists \(\mu>0\) with
+  \[
+    -\frac{g_k^T d_k}{\|g_k\|\|d_k\|} \ge \mu >0\quad\forall k.
+  \]
+  \item \(\alpha_k\) satisfy the Wolfe conditions (with fixed \(0<\rho<\sigma<1\)).
+\end{enumerate}
+
+\begin{theorem}{Global convergence (gradient vanishes)}{}
+Under the above assumptions either the algorithm terminates at a stationary point or \(\lim_{k\to\infty} \|g_k\| = 0\).
+\end{theorem}
+
+\begin{proof}[Sketch]
+From the Armijo (sufficient decrease) Wolfe condition,
+\[
+f(x_k)-f(x_{k+1}) \ge -\rho\alpha_k g_k^T d_k = \rho\alpha_k \|g_k\|\|d_k\|\cos\theta_k,
+\]
+where \(\cos\theta_k = -g_k^T d_k / (\|g_k\|\|d_k\|) \ge \mu\). The curvature Wolfe condition and Lipschitz continuity of \(g\) imply a lower bound on \(\alpha_k\):
+\[
+g(x_{k+1})^T d_k \ge \sigma g_k^T d_k \implies \|g(x_{k+1})-g_k\|\|d_k\| \ge (1-\sigma)|g_k^T d_k|.
+\]
+Using \(\|g(x_{k+1})-g_k\|\le L\alpha_k\|d_k\|\) gives
+\[
+\alpha_k \ge \frac{(1-\sigma)|g_k^T d_k|}{L\|d_k\|^2} = \frac{(1-\sigma)\|g_k\|\cos\theta_k}{L\|d_k\|}.
+\]
+Combine with the decrease bound:
+\[
+f(x_k)-f(x_{k+1}) \ge \rho \frac{(1-\sigma)\|g_k\|^2\cos^2\theta_k}{L}.
+\]
+By the uniform angle bound \(\cos\theta_k\ge\mu\), we obtain
+\[
+f(x_k)-f(x_{k+1}) \ge C \|g_k\|^2,\qquad C:=\rho(1-\sigma)\mu^2/L>0.
+\]
+Summing from \(k=0\) to \(N-1\) gives
+\[
+f(x_0)-f(x_N)\ge C\sum_{k=0}^{N-1}\|g_k\|^2.
+\]
+Because \(f\) is bounded below, the left-hand side is bounded, so \(\sum_k\|g_k\|^2<\infty\). Hence \(\|g_k\|\to0\). This is the usual Zoutendijk-type argument; full details are in standard textbooks. :contentReference[oaicite:7]{index=7}
+\end{proof}
+
+\section{Common algorithms and local convergence}
+
+\subsection{Steepest descent (negative gradient) — brief comment}
+Steepest descent with exact line search is globally convergent but can be slow. With inexact line search under the previous assumptions it satisfies the global convergence result above. For quadratic functions it converges linearly; details omitted.
+
+\subsection{Newton's method: quadratic convergence}
+Newton iteration:
+\[
+x_{k+1}=x_k - G(x_k)^{-1} g(x_k),
+\]
+assuming \(G(x_k)\) is invertible.
+
+\begin{theorem}{Local quadratic convergence of Newton's method}{}
+Let \(f\in C^2\) and \(x^*\) be a point with \(g(x^*)=0\) and \(G(x^*)\) nonsingular. If \(G\) is Lipschitz continuous in a neighborhood of \(x^*\), then for \(x_0\) sufficiently close to \(x^*\) the Newton iterates are well-defined and converge to \(x^*\) quadratically:
+\[
+\|x_{k+1}-x^*\|\le K\|x_k-x^*\|^2
+\]
+for some \(K>0\).
+\end{theorem}
+
+\begin{proof}[Sketch]
+Write the Newton step \(s_k=-G(x_k)^{-1}g(x_k)\). Using Taylor expansion of \(g\) at \(x^*\):
+\[
+g(x_k)=G(x^*)(x_k-x^*) + r_k,\qquad \|r_k\|\le \tfrac12 L\|x_k-x^*\|^2,
+\]
+with \(L\) the Lipschitz constant of \(G\). Then
+\[
+x_{k+1}-x^* = x_k-x^* - G(x_k)^{-1}g(x_k).
+\]
+Replace \(g(x_k)\) with the expansion and use continuity of \(G^{-1}\) near \(x^*\) to get
+\[
+\|x_{k+1}-x^*\| \le C \|x_k-x^*\|^2
+\]
+for \(x_k\) close, which yields quadratic convergence. See standard derivations. :contentReference[oaicite:8]{index=8}
+\end{proof}
+
+\subsection{Quasi-Newton (BFGS) — superlinear convergence}
+Quasi-Newton methods build an approximation \(B_k\) to the Hessian (or its inverse) updating it each step (BFGS is the common choice). Under standard assumptions (local smoothness, \(B_k\) bounded and positive definite, line search satisfying strong Wolfe conditions), BFGS achieves superlinear convergence to a local minimizer when started sufficiently close.
+
+\begin{theorem}{Local superlinear convergence of BFGS (sketch)}{}
+Assume \(f\in C^2\), \(G(x^*)\succ0\), and BFGS updates are used with line searches satisfying the strong Wolfe conditions. If initial \(x_0\) sufficiently close to \(x^*\) and \(B_0\) positive definite, then \(x_k\to x^*\) and the rate is superlinear.
+\end{theorem}
+
+\begin{proof}[Sketch]
+The proof combines (i) the Dennis–More condition which shows that the quasi-Newton update approximates the true Hessian sufficiently fast, and (ii) the fact that strong Wolfe line searches control the step lengths so that the curvature condition holds, ensuring stability of updates. From these, one shows \(\|B_k-G(x^*)\|\to0\) and the step \(s_k\) behaves like the Newton step asymptotically, which yields superlinear convergence. See textbook proofs for the full technical steps. :contentReference[oaicite:9]{index=9}
+\end{proof}
+
+\section{Trust-region methods}
+
+\subsection{Subproblem and existence of solution}
+At iterate \(x_k\) build quadratic model
+\[
+q_k(d)=f(x_k)+g_k^T d+\tfrac12 d^T G_k d,
+\]
+and solve the trust-region subproblem
+\[
+\min_{d\in\mathbb{R}^n} q_k(d) \quad\text{s.t.}\ \|d\|\le\Delta_k.
+\]
+
+\begin{proposition}{Existence of global minimizer for subproblem}{}
+For any symmetric \(G_k\) and any \(\Delta_k>0\), the trust-region subproblem has at least one global minimizer.
+\end{proposition}
+\begin{proof}
+The feasible set \(\{d:\|d\|\le\Delta_k\}\) is compact and \(q_k\) is continuous, hence it attains a minimum on that set by the extreme value theorem.
+\end{proof}
+
+\paragraph{Uniqueness.} Uniqueness holds if \(q_k\) is strictly convex on the ball, e.g., when \(G_k\succ0\) (positive definite) so the unconstrained minimizer \(d_N=-G_k^{-1}g_k\) is unique and either lies inside the ball (then it is the unique solution) or the constrained solution on the boundary is unique under mild conditions.
+
+\subsection{Basic convergence idea}
+After solving the subproblem we compute the ratio
+\[
+\rho_k=\frac{f(x_k)-f(x_k+d_k)}{q_k(0)-q_k(d_k)}
+\]
+and accept the step if \(\rho_k\) is sufficiently large, updating \(\Delta_k\) by rules such as those in the lecture slides. Under standard assumptions (same Lipschitz and boundedness assumptions as in line-search), trust-region methods are globally convergent in the sense that either a stationary point is found or \(\|g_k\|\to0\). The proof uses the fact that the model reduction approximates the actual reduction, and poor model quality (small \(\rho_k\)) leads to shrinking \(\Delta_k\), whereas good \(\rho_k\) increases \(\Delta_k\), guaranteeing eventual progress. :contentReference[oaicite:10]{index=10}
+
+\subsection{Dogleg method (brief)}
+Dogleg is a practical strategy when \(G_k\) is positive definite: combine the Cauchy (steepest-descent scaled) step \(d_{SD}\) and Newton step \(d_N\) along a piecewise linear path to find a point on the trust-region boundary with acceptable reduction. The Dogleg algorithm produces a candidate \(d_k\) satisfying model decrease; global convergence of the trust-region method using Dogleg follows from the general trust-region convergence theory because Dogleg delivers a (near-)optimal subproblem solution and the standard \(\rho_k\)-based radius updates apply. :contentReference[oaicite:11]{index=11}
+
+
+\end{document}
